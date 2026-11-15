@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: homelens-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-homelens}
+      POSTGRES_USER: ${DB_USERNAME:-homelens}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-homelens}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-homelens} -d ${DB_NAME:-homelens}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - homelens-network
+
+  backend:
+    build:
+      context: ../../
+      dockerfile: docker/development/Dockerfile.backend
+    container_name: homelens-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-homelens}
+      DB_USERNAME: ${DB_USERNAME:-homelens}
+      DB_PASSWORD: ${DB_PASSWORD:-homelens}
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+      APP_DEFAULT_PASSWORD: ${APP_DEFAULT_PASSWORD:-ChangeMe123!}
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - homelens-network
+
+  frontend:
+    build:
+      context: ../../
+      dockerfile: docker/development/Dockerfile.frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    container_name: homelens-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - homelens-network
+
+volumes:
+  postgres_data:
+    name: homelens_postgres_data
+  uploads_data:
+    name: homelens_uploads_data
+
+networks:
+  homelens-network:
+    name: homelens_network
+    driver: bridge

@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+MAVEN_HOME="$SCRIPT_DIR/../tools/apache-maven-3.9.9"
+
+if [ ! -d "$MAVEN_HOME" ]; then
+  echo "Maven installation not found at $MAVEN_HOME" >&2
+  echo "Install it once, then rerun this script." >&2
+  exit 1
+fi
+
+cd "$SCRIPT_DIR" || exit 1
+exec "$MAVEN_HOME/bin/mvn" "$@"

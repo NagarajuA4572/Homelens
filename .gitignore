@@ -1,0 +1,38 @@
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Java
+backend/target/
+backend/.classpath
+backend/.project
+backend/.settings/
+backend/.factorypath
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.eslintcache
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Docker
+**/docker-compose.override.yml
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build output
+coverage/
+build/
+
+# Maven wrapper local cache
+.mvn/wrapper/*.jar
+tools/ 
