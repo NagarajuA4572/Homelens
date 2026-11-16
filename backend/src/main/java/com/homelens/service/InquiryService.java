@@ -129,6 +129,13 @@ public class InquiryService {
 
         inquiry.setStatus(status);
         Inquiry updated = inquiryRepository.save(inquiry);
+
+        // Remove house from public search/listing after owner approves request
+        if (property != null && (status == InquiryStatus.ACCEPTED || status == InquiryStatus.RESOLVED)) {
+            property.setStatus(com.homelens.model.PropertyStatus.RENTED);
+            propertyRepository.save(property);
+        }
+
         return InquiryResponse.fromEntity(updated);
     }
 

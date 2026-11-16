@@ -48,15 +48,19 @@ export default function SeekerInquiriesPage() {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'CONTACTED':
-        return { label: '● Owner Contacted You', className: 'status-contacted' };
+      case 'ACCEPTED':
       case 'RESOLVED':
-        return { label: '● Tour Scheduled / Approved', className: 'status-resolved' };
+        return { label: '🎉 Request Accepted — Contact Unlocked', className: 'status-resolved' };
+      case 'DENIED':
+        return { label: '❌ Request Declined by Landlord', className: 'status-closed' };
+      case 'CONTACTED':
+        return { label: '📞 Owner Followed Up', className: 'status-contacted' };
       case 'CLOSED':
         return { label: '● Closed', className: 'status-closed' };
       case 'NEW':
+      case 'PENDING':
       default:
-        return { label: '● Pending Owner Review', className: 'status-new' };
+        return { label: '⏳ Pending Landlord Review', className: 'status-new' };
     }
   };
 
@@ -155,10 +159,23 @@ export default function SeekerInquiriesPage() {
                     {inq.ownerName && (
                       <div className="seeker-owner-contact">
                         <span>Landlord: <strong>{inq.ownerName}</strong></span>
-                        {inq.ownerPhone && (
-                          <a href={`tel:${inq.ownerPhone}`} className="contact-chip">
-                            📞 {inq.ownerPhone}
-                          </a>
+                        {(inq.status === 'ACCEPTED' || inq.status === 'RESOLVED') ? (
+                          <div className="unlocked-contact-pills">
+                            {inq.ownerPhone && (
+                              <a href={`tel:${inq.ownerPhone}`} className="contact-chip highlight-chip">
+                                📞 Call: {inq.ownerPhone}
+                              </a>
+                            )}
+                            {inq.ownerEmail && (
+                              <a href={`mailto:${inq.ownerEmail}`} className="contact-chip highlight-chip">
+                                ✉️ Email: {inq.ownerEmail}
+                              </a>
+                            )}
+                          </div>
+                        ) : inq.status === 'DENIED' ? (
+                          <span className="privacy-locked-text">❌ Landlord declined this request</span>
+                        ) : (
+                          <span className="privacy-locked-text">🔒 Contact details unlock when landlord accepts</span>
                         )}
                       </div>
                     )}

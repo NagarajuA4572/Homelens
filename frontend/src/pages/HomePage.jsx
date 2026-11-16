@@ -92,7 +92,7 @@ export default function HomePage() {
             <p>Loading featured properties…</p>
           </div>
         ) : featuredProperties.length > 0 ? (
-          <div className="property-grid">
+          <div className="properties-grid home-properties-grid">
             {featuredProperties.map((prop) => (
               <PropertyCard key={prop.id} property={prop} />
             ))}

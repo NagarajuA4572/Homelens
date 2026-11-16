@@ -14,13 +14,14 @@ export default function PropertyDetailPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userInquiry, setUserInquiry] = useState(null);
 
   // Inquiry form state
   const [inquiryName, setInquiryName] = useState(user?.fullName || '');
   const [inquiryEmail, setInquiryEmail] = useState(user?.email || '');
   const [inquiryPhone, setInquiryPhone] = useState(user?.phone || '');
   const [inquiryMessage, setInquiryMessage] = useState(
-    'Hi, I am interested in this rental property. Could we schedule a showing?'
+    'Hi, I am interested in this rental property. Could we schedule a showing and share contact details?'
   );
   const [inquirySubmitting, setInquirySubmitting] = useState(false);
   const [inquirySuccess, setInquirySuccess] = useState(false);
@@ -44,6 +45,24 @@ export default function PropertyDetailPage() {
   }, [id]);
 
   useEffect(() => {
+    const fetchUserInquiry = async () => {
+      if (user) {
+        try {
+          const sent = await inquiryService.getMySentInquiries(0, 50);
+          const found = (sent.content || []).find((inq) => String(inq.propertyId) === String(id));
+          if (found) {
+            setUserInquiry(found);
+          }
+        } catch (e) {
+          // Ignore non-critical inquiry check
+        }
+      }
+    };
+
+    fetchUserInquiry();
+  }, [id, user]);
+
+  useEffect(() => {
     if (user) {
       if (!inquiryName) setInquiryName(user.fullName || '');
       if (!inquiryEmail) setInquiryEmail(user.email || '');
@@ -58,12 +77,13 @@ export default function PropertyDetailPage() {
     setInquirySuccess(false);
 
     try {
-      await inquiryService.submitInquiry(id, {
+      const created = await inquiryService.submitInquiry(id, {
         name: inquiryName,
         email: inquiryEmail,
         phone: inquiryPhone,
         message: inquiryMessage,
       });
+      setUserInquiry(created);
       setInquirySuccess(true);
       setInquiryMessage('');
     } catch (err) {
@@ -386,31 +406,87 @@ export default function PropertyDetailPage() {
             </div>
           </div>
 
-          {/* Property Owner Card */}
+          {/* Property Owner Card with Privacy Protection */}
           {property.owner && (
             <div className="owner-card">
-              <h4>Listed by Property Owner</h4>
+              <div className="owner-card-header">
+                <h4>Listed by Property Owner</h4>
+                <span className="verified-badge">✓ Verified Owner</span>
+              </div>
               <div className="owner-info">
                 <span className="owner-avatar">{property.owner.fullName?.charAt(0) || 'O'}</span>
-                <div>
+                <div className="owner-meta">
                   <div className="owner-name">{property.owner.fullName}</div>
-                  <div className="owner-email">{property.owner.email}</div>
-                  {property.owner.phone && <div className="owner-phone">📞 {property.owner.phone}</div>}
+                  <div className="owner-role-title">HomeLens Verified Host</div>
                 </div>
               </div>
+
+              {/* Security Privacy Gate: Personal email & phone revealed ONLY after owner accepts request */}
+              {user && property.owner && String(user.id) === String(property.owner.id) ? (
+                <div className="owner-contact-box owner-self-box">
+                  <div className="contact-box-title">🏢 You Own This Listing</div>
+                  <div className="contact-line">✉️ {user.email}</div>
+                  {user.phone && <div className="contact-line">📞 {user.phone}</div>}
+                </div>
+              ) : userInquiry && (userInquiry.status === 'ACCEPTED' || userInquiry.status === 'RESOLVED') ? (
+                <div className="owner-contact-box owner-unlocked-box">
+                  <div className="contact-box-badge">✅ Contact Details Unlocked</div>
+                  <p className="contact-unlocked-hint">The owner has accepted your request! Connect directly:</p>
+                  <div className="unlocked-contact-info">
+                    {userInquiry.ownerEmail && (
+                      <div className="contact-line">
+                        <span>✉️ Email:</span>
+                        <a href={`mailto:${userInquiry.ownerEmail}`}>{userInquiry.ownerEmail}</a>
+                      </div>
+                    )}
+                    {userInquiry.ownerPhone && (
+                      <div className="contact-line">
+                        <span>📞 Phone:</span>
+                        <a href={`tel:${userInquiry.ownerPhone}`}>{userInquiry.ownerPhone}</a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : userInquiry && (userInquiry.status === 'NEW' || userInquiry.status === 'PENDING') ? (
+                <div className="owner-contact-box owner-pending-box">
+                  <div className="contact-box-badge">⏳ Request Sent — Awaiting Owner Approval</div>
+                  <p className="contact-privacy-note">
+                    Your request was sent to {property.owner.fullName}. Once accepted, their verified contact details will be unlocked right here.
+                  </p>
+                </div>
+              ) : userInquiry && userInquiry.status === 'DENIED' ? (
+                <div className="owner-contact-box owner-denied-box">
+                  <div className="contact-box-badge">❌ Request Declined</div>
+                  <p className="contact-privacy-note">
+                    The owner declined this request. Contact details remain private.
+                  </p>
+                </div>
+              ) : (
+                <div className="owner-contact-box owner-locked-box">
+                  <div className="contact-box-badge">🔒 Contact Details Protected</div>
+                  <p className="contact-privacy-note">
+                    For privacy and safety, the owner's phone number and email are confidential until you submit a request and the owner accepts.
+                  </p>
+                  <a href="#inquiry-section" className="request-access-cta-btn">
+                    📩 Request Contact & Tour
+                  </a>
+                </div>
+              )}
             </div>
           )}
 
           {/* Lead / Inquiry Submission Form */}
-          <div className="inquiry-card">
-            <h3>Send Inquiry / Tour Request</h3>
-            <p className="inquiry-subtitle">Connect directly with the property owner.</p>
+          <div className="inquiry-card" id="inquiry-section">
+            <h3>Request Owner Contact Details & Tour</h3>
+            <p className="inquiry-subtitle">
+              Submit your request to connect with the owner. Once accepted, their direct email and phone number will be unlocked.
+            </p>
 
             {inquirySuccess ? (
               <div className="inquiry-success-box">
                 <span className="success-icon">✓</span>
-                <h4>Inquiry Sent Successfully!</h4>
-                <p>The owner has received your contact details and message. They will reach out shortly.</p>
+                <h4>Request Submitted Successfully!</h4>
+                <p>The owner has received your request. Once they accept, their contact details will be unlocked here and on your "My Requests" page.</p>
                 <button
                   type="button"
                   onClick={() => setInquirySuccess(false)}
@@ -474,7 +550,7 @@ export default function PropertyDetailPage() {
                   className="primary-button full-width"
                   disabled={inquirySubmitting}
                 >
-                  {inquirySubmitting ? 'Sending Inquiry…' : 'Contact Owner'}
+                  {inquirySubmitting ? 'Sending Request…' : '📩 Request Owner Contact & Tour'}
                 </button>
               </form>
             )}

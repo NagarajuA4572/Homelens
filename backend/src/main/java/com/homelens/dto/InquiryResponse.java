@@ -17,6 +17,7 @@ public class InquiryResponse {
     private String propertyImageUrl;
     private String ownerName;
     private String ownerPhone;
+    private String ownerEmail;
 
     private Long userId;
     private String name;
@@ -54,7 +55,14 @@ public class InquiryResponse {
 
             if (property.getAgent() != null) {
                 response.setOwnerName(property.getAgent().getFullName());
-                response.setOwnerPhone(property.getAgent().getPhone());
+                // Security concern: Disclose owner contact details (phone, email) ONLY after request is accepted
+                if (inquiry.getStatus() == InquiryStatus.ACCEPTED || inquiry.getStatus() == InquiryStatus.RESOLVED) {
+                    response.setOwnerPhone(property.getAgent().getPhone());
+                    response.setOwnerEmail(property.getAgent().getEmail());
+                } else {
+                    response.setOwnerPhone(null);
+                    response.setOwnerEmail(null);
+                }
             }
         }
         if (inquiry.getUser() != null) {
@@ -133,6 +141,14 @@ public class InquiryResponse {
 
     public void setOwnerPhone(String ownerPhone) {
         this.ownerPhone = ownerPhone;
+    }
+
+    public String getOwnerEmail() {
+        return ownerEmail;
+    }
+
+    public void setOwnerEmail(String ownerEmail) {
+        this.ownerEmail = ownerEmail;
     }
 
     public Long getUserId() {

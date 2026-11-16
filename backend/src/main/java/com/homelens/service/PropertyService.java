@@ -266,13 +266,15 @@ public class PropertyService {
         }
 
         PropertyImage image = PropertyImage.builder()
+                .property(property)
                 .imageUrl(imageUrl)
                 .isPrimary(primary)
                 .displayOrder(nextOrder)
                 .build();
         property.addImage(image);
+        propertyImageRepository.save(image);
 
-        Property saved = propertyRepository.save(property);
+        Property saved = propertyRepository.saveAndFlush(property);
         return PropertyResponse.fromEntity(saved);
     }
 
@@ -299,8 +301,9 @@ public class PropertyService {
 
         property.removeImage(targetImage);
         fileStorageService.deletePropertyImage(targetImage.getImageUrl());
+        propertyImageRepository.delete(targetImage);
 
-        Property saved = propertyRepository.save(property);
+        Property saved = propertyRepository.saveAndFlush(property);
         return PropertyResponse.fromEntity(saved);
     }
 

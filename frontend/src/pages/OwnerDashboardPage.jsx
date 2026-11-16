@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propertyService } from '../services/propertyService';
@@ -57,6 +57,7 @@ export default function OwnerDashboardPage() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isPrimaryUpload, setIsPrimaryUpload] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -122,10 +123,13 @@ export default function OwnerDashboardPage() {
 
   const handleToggleStatus = async (propId, currentStatus) => {
     const newStatus = currentStatus === 'AVAILABLE' ? 'RENTED' : 'AVAILABLE';
+    const statusNote = newStatus === 'AVAILABLE' 
+      ? 'Made Online: Property is now published in public listings.' 
+      : 'Made Offline: Property is now hidden from public listings.';
     try {
       await propertyService.updatePropertyStatus(propId, newStatus);
-      setMsg(`Property status updated to ${newStatus}.`);
-      loadMyProperties();
+      setMsg(statusNote);
+      await loadMyProperties();
     } catch (err) {
       setError('Could not update property status.');
     }
@@ -264,10 +268,14 @@ export default function OwnerDashboardPage() {
         selectedFile,
         isPrimaryUpload
       );
-      setMsg('Photograph uploaded successfully!');
+      setMsg('Photograph uploaded and saved successfully!');
       setSelectedFile(null);
+      setIsPrimaryUpload(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       setManagingPhotosProperty(updatedProp);
-      loadMyProperties();
+      await loadMyProperties();
     } catch (err) {
       setError('Failed to upload image. Supported formats: JPG, PNG, WEBP.');
     } finally {
@@ -283,7 +291,7 @@ export default function OwnerDashboardPage() {
       const updatedProp = await propertyService.deletePropertyImage(managingPhotosProperty.id, imageId);
       setMsg('Photograph deleted.');
       setManagingPhotosProperty(updatedProp);
-      loadMyProperties();
+      await loadMyProperties();
     } catch (err) {
       setError('Failed to delete photograph.');
     }
@@ -293,8 +301,16 @@ export default function OwnerDashboardPage() {
   const handleUpdateInquiryStatus = async (inquiryId, newStatus) => {
     try {
       await inquiryService.updateInquiryStatus(inquiryId, newStatus);
-      setMsg(`Inquiry status updated to ${newStatus}.`);
-      loadMyInquiries();
+      if (newStatus === 'ACCEPTED' || newStatus === 'RESOLVED') {
+        setMsg('🎉 Request accepted! Seeker is now granted access to your contact details, and this property has been automatically taken offline from public listings.');
+        await Promise.all([loadMyProperties(), loadMyInquiries()]);
+      } else if (newStatus === 'DENIED') {
+        setMsg('Request denied. The property remains in its current listing state.');
+        await loadMyInquiries();
+      } else {
+        setMsg(`Inquiry status updated to ${newStatus}.`);
+        await loadMyInquiries();
+      }
     } catch (err) {
       setError('Failed to update inquiry status.');
     }
@@ -419,14 +435,19 @@ export default function OwnerDashboardPage() {
                           </div>
                         </td>
                         <td>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleStatus(p.id, p.status)}
-                            className={`status-toggle-btn ${isAvailable ? 'available' : 'rented'}`}
-                            title="Click to toggle status between Available and Rented"
-                          >
-                            {isAvailable ? '● Available' : '● Rented'}
-                          </button>
+                          <div className="status-cell-wrapper">
+                            <span className={`listing-state-tag ${isAvailable ? 'tag-online' : 'tag-offline'}`}>
+                              {isAvailable ? '🟢 Online (In Listings)' : '🔴 Offline (Hidden)'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStatus(p.id, p.status)}
+                              className={`status-action-pill ${isAvailable ? 'btn-make-offline' : 'btn-make-online'}`}
+                              title={isAvailable ? "Click to take property offline (remove from public listings)" : "Click to make property online (publish to public listings)"}
+                            >
+                              {isAvailable ? '📴 Make Offline' : '🌐 Make Online'}
+                            </button>
+                          </div>
                         </td>
                         <td>
                           <div className="rules-summary">
@@ -528,14 +549,37 @@ export default function OwnerDashboardPage() {
 
               {/* Upload New Photo Form */}
               <form onSubmit={handleUploadPhoto} className="upload-photo-bar">
-                <h5>Add New Photograph</h5>
+                <div className="upload-photo-bar-title">
+                  <h5>Add New Photograph</h5>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const refreshed = await propertyService.getPropertyById(managingPhotosProperty.id);
+                        setManagingPhotosProperty(refreshed);
+                        loadMyProperties();
+                        setMsg('Photo gallery refreshed.');
+                      } catch (e) {}
+                    }}
+                    className="refresh-photos-btn"
+                    title="Refresh photo gallery from database"
+                  >
+                    🔄 Refresh Gallery
+                  </button>
+                </div>
                 <div className="upload-inputs-row">
                   <input
+                    ref={fileInputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => setSelectedFile(e.target.files[0])}
+                    onChange={(e) => setSelectedFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
                     required
                   />
+                  {selectedFile && (
+                    <span className="selected-file-pill">
+                      📎 {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
+                    </span>
+                  )}
                   <label className="checkbox-label">
                     <input
                       type="checkbox"
@@ -544,7 +588,7 @@ export default function OwnerDashboardPage() {
                     />
                     <span>Set as primary photo</span>
                   </label>
-                  <button type="submit" className="primary-button" disabled={uploadingPhoto}>
+                  <button type="submit" className="primary-button" disabled={uploadingPhoto || !selectedFile}>
                     {uploadingPhoto ? 'Uploading…' : '⬆ Upload Photo'}
                   </button>
                 </div>
@@ -1155,7 +1199,15 @@ export default function OwnerDashboardPage() {
                       </div>
                       <div className="inquiry-header-actions">
                         <span className={`inquiry-status-badge ${statusClass}`}>
-                          ● {inq.status || 'NEW'}
+                          {inq.status === 'ACCEPTED'
+                            ? '✅ Accepted / Rented'
+                            : inq.status === 'DENIED'
+                            ? '❌ Denied'
+                            : inq.status === 'CONTACTED'
+                            ? '📞 Contacted'
+                            : inq.status === 'CLOSED'
+                            ? '🔒 Closed'
+                            : '⏳ Pending Review'}
                         </span>
                         <span className="inquiry-date">
                           {new Date(inq.createdAt).toLocaleDateString('en-IN', {
@@ -1176,16 +1228,17 @@ export default function OwnerDashboardPage() {
                       </div>
 
                       <div className="inquiry-status-controls">
-                        <label>Status:</label>
+                        <label>Owner Decision / Status:</label>
                         <select
                           value={inq.status || 'NEW'}
                           onChange={(e) => handleUpdateInquiryStatus(inq.id, e.target.value)}
-                          className="inquiry-status-select"
+                          className={`inquiry-status-select select-${inq.status?.toLowerCase() || 'new'}`}
                         >
-                          <option value="NEW">New Lead</option>
-                          <option value="CONTACTED">Contacted</option>
-                          <option value="RESOLVED">Resolved / Tour Scheduled</option>
-                          <option value="CLOSED">Closed</option>
+                          <option value="NEW">⏳ Pending Review</option>
+                          <option value="ACCEPTED">✅ Accept Request (Approve Seeker & Delist House)</option>
+                          <option value="DENIED">❌ Deny Request (Decline Seeker)</option>
+                          <option value="CONTACTED">📞 In Contact / Follow Up</option>
+                          <option value="CLOSED">🔒 Closed</option>
                         </select>
                         <button
                           type="button"
