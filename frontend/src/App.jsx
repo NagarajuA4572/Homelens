@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import PropertyListingsPage from './pages/PropertyListingsPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import OwnerDashboardPage from './pages/OwnerDashboardPage';
+import SeekerInquiriesPage from './pages/SeekerInquiriesPage';
 import AboutPage from './pages/AboutPage';
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/properties" element={<PropertyListingsPage />} />
           <Route path="/properties/:id" element={<PropertyDetailPage />} />
           <Route path="/owner/properties" element={<OwnerDashboardPage />} />
+          <Route path="/seeker/inquiries" element={<SeekerInquiriesPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

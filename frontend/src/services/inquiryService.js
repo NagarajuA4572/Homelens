@@ -13,6 +13,13 @@ export const inquiryService = {
     return response.data;
   },
 
+  async getMySentInquiries(page = 0, size = 20) {
+    const response = await apiClient.get('/api/inquiries/sent', {
+      params: { page, size },
+    });
+    return response.data;
+  },
+
   async getPropertyInquiries(propertyId) {
     const response = await apiClient.get(`/api/properties/${propertyId}/inquiries`);
     return response.data;

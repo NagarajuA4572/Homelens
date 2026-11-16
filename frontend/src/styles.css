@@ -2232,9 +2232,296 @@ tr:hover td { background: #fafbff; }
 
 /* Other modal forms */
 .edit-property-modal { background: #fff; border: 1px solid #e7ebf3; border-radius: 22px; box-shadow: 0 25px 70px rgba(17,25,48,.22); }
-.modal-form .full-width { width: 100%; }
+/* =========================================================
+   PROXIMITY & TRANSIT DISTANCES BANNER (PROPERTY DETAILS)
+   ========================================================= */
+.detail-distances-bar {
+  margin: 1.5rem 0;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
 
-/* Buttons and interactive controls */
+.distances-bar-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+.distances-bar-heading .bar-icon {
+  font-size: 1.25rem;
+}
+
+.distances-bar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.85rem;
+}
+
+.dist-chip-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: var(--radius-sm);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.dist-chip-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.dist-chip-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.dist-chip-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.dist-chip-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dist-chip-val {
+  font-size: 1.05rem;
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.highlight-km {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--primary) !important;
+}
+
+/* =========================================================
+   SEEKER REQUESTS & INQUIRIES DASHBOARD
+   ========================================================= */
+.seeker-dashboard {
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+}
+
+.seeker-dash-header {
+  margin-bottom: 2rem;
+}
+
+.seeker-dash-header h1 {
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-main);
+}
+
+.seeker-dash-header p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.seeker-inquiries-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.5rem;
+}
+
+.seeker-inquiry-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.seeker-inquiry-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+.seeker-card-media {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: #0f172a;
+}
+
+.seeker-card-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.seeker-card-media .inquiry-status-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.seeker-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.seeker-prop-header {
+  margin-bottom: 0.75rem;
+}
+
+.seeker-prop-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.seeker-prop-title a {
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.seeker-prop-title a:hover {
+  color: var(--primary);
+}
+
+.seeker-prop-loc {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.seeker-prop-rent {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.rent-tag {
+  color: var(--primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.rent-period {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.seeker-inquiry-quote {
+  background: rgba(15, 23, 42, 0.6);
+  border-left: 3px solid var(--primary);
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.quote-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.05em;
+}
+
+.quote-text {
+  font-size: 0.9rem;
+  color: var(--text-main);
+  font-style: italic;
+  margin: 0 0 0.4rem;
+  line-height: 1.4;
+}
+
+.quote-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.seeker-card-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.seeker-owner-contact {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+}
+
+.owner-lead-name {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.owner-lead-phone {
+  color: var(--accent-green);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.owner-lead-phone:hover {
+  text-decoration: underline;
+}
+
+.seeker-req-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.88rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+}
+
+.seeker-empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+  max-width: 580px;
+  margin: 2rem auto;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.seeker-empty-state h3 {
+  font-size: 1.4rem;
+  margin: 0 0 0.5rem;
+  color: var(--text-main);
+}
+
+.seeker-empty-state p {
+  color: var(--text-muted);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
 button { transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
 button:focus-visible, a:focus-visible { outline: 3px solid rgba(88,101,242,.35); outline-offset: 3px; }
 input[type="checkbox"], input[type="radio"] { accent-color: #5865f2; }

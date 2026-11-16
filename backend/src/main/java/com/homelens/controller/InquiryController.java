@@ -62,6 +62,19 @@ public class InquiryController {
         return ResponseEntity.ok(responses);
     }
 
+    @GetMapping("/api/inquiries/sent")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get inquiries and tour requests sent by the authenticated seeker")
+    public ResponseEntity<PageResponse<InquiryResponse>> getMySentInquiries(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            Authentication authentication
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        PageResponse<InquiryResponse> responses = inquiryService.getInquiriesForSeeker(authentication.getName(), pageable);
+        return ResponseEntity.ok(responses);
+    }
+
     @GetMapping("/api/properties/{id}/inquiries")
     @PreAuthorize("hasAnyRole('OWNER', 'AGENT', 'ADMIN')")
     @Operation(summary = "Get all inquiries for a specific property (Owner only)")

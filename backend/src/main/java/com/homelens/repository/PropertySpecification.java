@@ -54,19 +54,19 @@ public class PropertySpecification {
                 predicates.add(cb.lessThanOrEqualTo(root.get("monthlyRent"), criteria.getMaxRent()));
             }
 
-            // Occupancy: Family allowed
-            if (criteria.getFamilyAllowed() != null) {
-                predicates.add(cb.equal(root.get("familyAllowed"), criteria.getFamilyAllowed()));
+            // Occupancy: Family allowed (filter only when user explicitly requests family-friendly homes)
+            if (Boolean.TRUE.equals(criteria.getFamilyAllowed())) {
+                predicates.add(cb.isTrue(root.get("familyAllowed")));
             }
 
-            // Occupancy: Single / Bachelor allowed
-            if (criteria.getSingleAllowed() != null) {
-                predicates.add(cb.equal(root.get("singleAllowed"), criteria.getSingleAllowed()));
+            // Occupancy: Single / Bachelor allowed (filter only when user explicitly requests single-friendly homes)
+            if (Boolean.TRUE.equals(criteria.getSingleAllowed())) {
+                predicates.add(cb.isTrue(root.get("singleAllowed")));
             }
 
-            // Water Availability (Yes / No)
-            if (criteria.getWaterAvailability() != null) {
-                predicates.add(cb.equal(root.get("waterAvailability"), criteria.getWaterAvailability()));
+            // Water Availability (filter only when user explicitly requests guaranteed water)
+            if (Boolean.TRUE.equals(criteria.getWaterAvailability())) {
+                predicates.add(cb.isTrue(root.get("waterAvailability")));
             }
 
             // Availability Status (AVAILABLE or RENTED)

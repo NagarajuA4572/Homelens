@@ -227,7 +227,16 @@ class PropertyIntegrationTests {
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].id").value(propertyId));
 
-        // 13. Owner dismisses / deletes inquiry
+        // 13. Seeker views their pending inquiries & status updates via /api/inquiries/sent
+        String seekerToken = registerAndGetToken("rohit.seeker@gmail.com", Role.ROLE_BUYER);
+        mockMvc.perform(get("/api/inquiries/sent")
+                        .header("Authorization", "Bearer " + seekerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.content[0].propertyTitle").value("Green Valley Gated Residency"))
+                .andExpect(jsonPath("$.content[0].status").value("CONTACTED"));
+
+        // 14. Owner dismisses / deletes inquiry
         mockMvc.perform(delete("/api/inquiries/" + inquiryId)
                         .header("Authorization", "Bearer " + ownerToken))
                 .andExpect(status().isNoContent());

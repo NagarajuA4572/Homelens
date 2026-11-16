@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { propertyService } from '../services/propertyService';
 import { inquiryService } from '../services/inquiryService';
 import { useAuth } from '../context/AuthContext';
+import { resolveImageUrl, FALLBACK_PROPERTY_IMAGE } from '../services/api';
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
@@ -83,6 +84,12 @@ export default function PropertyDetailPage() {
     }).format(val);
   };
 
+  const formatKm = (val) => {
+    if (val === null || val === undefined || val === '') return 'Not specified';
+    const num = parseFloat(val);
+    return isNaN(num) ? `${val} km` : `${num.toFixed(1)} km`;
+  };
+
   if (loading) {
     return (
       <main className="container detail-container">
@@ -110,10 +117,7 @@ export default function PropertyDetailPage() {
 
   const images = property.images && property.images.length > 0 ? property.images : [];
   const currentImage = images[activeImageIndex];
-  let mainImageUrl = currentImage?.imageUrl;
-  if (mainImageUrl && mainImageUrl.startsWith('/uploads/')) {
-    mainImageUrl = `${apiUrl}${mainImageUrl}`;
-  }
+  const mainImageUrl = resolveImageUrl(currentImage?.imageUrl) || FALLBACK_PROPERTY_IMAGE;
 
   const isAvailable = property.status === 'AVAILABLE';
 
@@ -160,22 +164,21 @@ export default function PropertyDetailPage() {
       {/* Photo Gallery */}
       <section className="gallery-section">
         <div className="gallery-main">
-          {mainImageUrl ? (
-            <img src={mainImageUrl} alt={property.title} className="gallery-main-img" />
-          ) : (
-            <div className="gallery-placeholder">
-              <span>🏠 HomeLens Photography</span>
-            </div>
-          )}
+          <img
+            src={mainImageUrl}
+            alt={property.title}
+            className="gallery-main-img"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = FALLBACK_PROPERTY_IMAGE;
+            }}
+          />
         </div>
 
         {images.length > 1 && (
           <div className="gallery-thumbnails">
             {images.map((img, idx) => {
-              let thumbUrl = img.imageUrl;
-              if (thumbUrl && thumbUrl.startsWith('/uploads/')) {
-                thumbUrl = `${apiUrl}${thumbUrl}`;
-              }
+              const thumbUrl = resolveImageUrl(img.imageUrl) || FALLBACK_PROPERTY_IMAGE;
               return (
                 <button
                   key={img.id || idx}
@@ -183,12 +186,64 @@ export default function PropertyDetailPage() {
                   className={`gallery-thumb-btn ${idx === activeImageIndex ? 'active' : ''}`}
                   onClick={() => setActiveImageIndex(idx)}
                 >
-                  <img src={thumbUrl} alt={`Thumbnail ${idx + 1}`} />
+                  <img
+                    src={thumbUrl}
+                    alt={`Thumbnail ${idx + 1}`}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = FALLBACK_PROPERTY_IMAGE;
+                    }}
+                  />
                 </button>
               );
             })}
           </div>
         )}
+      </section>
+
+      {/* Highlighted Proximity & Distance Bar (in Kilometres) */}
+      <section className="detail-distances-bar">
+        <div className="distances-bar-heading">
+          <span className="bar-icon">📍</span>
+          <strong>Transit & Nearby Facility Distances (in km):</strong>
+        </div>
+        <div className="distances-bar-grid">
+          <div className="dist-chip-item">
+            <span className="dist-chip-icon">🏥</span>
+            <div className="dist-chip-text">
+              <span className="dist-chip-label">Hospital</span>
+              <strong className="dist-chip-val">{formatKm(property.distanceHospitalKm)}</strong>
+            </div>
+          </div>
+          <div className="dist-chip-item">
+            <span className="dist-chip-icon">🚇</span>
+            <div className="dist-chip-text">
+              <span className="dist-chip-label">Metro Station</span>
+              <strong className="dist-chip-val">{formatKm(property.distanceMetroKm)}</strong>
+            </div>
+          </div>
+          <div className="dist-chip-item">
+            <span className="dist-chip-icon">🚌</span>
+            <div className="dist-chip-text">
+              <span className="dist-chip-label">Bus Stop</span>
+              <strong className="dist-chip-val">{formatKm(property.distanceBusStopKm)}</strong>
+            </div>
+          </div>
+          <div className="dist-chip-item">
+            <span className="dist-chip-icon">🏫</span>
+            <div className="dist-chip-text">
+              <span className="dist-chip-label">School</span>
+              <strong className="dist-chip-val">{formatKm(property.distanceSchoolKm)}</strong>
+            </div>
+          </div>
+          <div className="dist-chip-item">
+            <span className="dist-chip-icon">🎓</span>
+            <div className="dist-chip-text">
+              <span className="dist-chip-label">College / Univ</span>
+              <strong className="dist-chip-val">{formatKm(property.distanceCollegeKm)}</strong>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Main Grid: Details Left, Cards Right */}
@@ -259,16 +314,14 @@ export default function PropertyDetailPage() {
           {/* Nearby Facilities & Distances (in km) */}
           <section className="detail-section">
             <h2>Nearby Facilities & Distances</h2>
-            <p className="section-hint">Approximate driving/walking distances provided by property owner:</p>
+            <p className="section-hint">Exact driving / walking distances in kilometres provided by property owner:</p>
 
             <div className="distances-table-grid">
               <div className="distance-box">
                 <span className="dist-icon">🏥</span>
                 <div className="dist-details">
                   <span className="dist-name">Hospital / Healthcare</span>
-                  <span className="dist-value">
-                    {property.distanceHospitalKm ? `${property.distanceHospitalKm} km` : 'Not specified'}
-                  </span>
+                  <span className="dist-value highlight-km">{formatKm(property.distanceHospitalKm)}</span>
                 </div>
               </div>
 
@@ -276,9 +329,7 @@ export default function PropertyDetailPage() {
                 <span className="dist-icon">🚇</span>
                 <div className="dist-details">
                   <span className="dist-name">Metro Station</span>
-                  <span className="dist-value">
-                    {property.distanceMetroKm ? `${property.distanceMetroKm} km` : 'Not specified'}
-                  </span>
+                  <span className="dist-value highlight-km">{formatKm(property.distanceMetroKm)}</span>
                 </div>
               </div>
 
@@ -286,9 +337,7 @@ export default function PropertyDetailPage() {
                 <span className="dist-icon">🚌</span>
                 <div className="dist-details">
                   <span className="dist-name">Bus Stop</span>
-                  <span className="dist-value">
-                    {property.distanceBusStopKm ? `${property.distanceBusStopKm} km` : 'Not specified'}
-                  </span>
+                  <span className="dist-value highlight-km">{formatKm(property.distanceBusStopKm)}</span>
                 </div>
               </div>
 
@@ -296,9 +345,7 @@ export default function PropertyDetailPage() {
                 <span className="dist-icon">🏫</span>
                 <div className="dist-details">
                   <span className="dist-name">School</span>
-                  <span className="dist-value">
-                    {property.distanceSchoolKm ? `${property.distanceSchoolKm} km` : 'Not specified'}
-                  </span>
+                  <span className="dist-value highlight-km">{formatKm(property.distanceSchoolKm)}</span>
                 </div>
               </div>
 
@@ -306,9 +353,7 @@ export default function PropertyDetailPage() {
                 <span className="dist-icon">🎓</span>
                 <div className="dist-details">
                   <span className="dist-name">College / University</span>
-                  <span className="dist-value">
-                    {property.distanceCollegeKm ? `${property.distanceCollegeKm} km` : 'Not specified'}
-                  </span>
+                  <span className="dist-value highlight-km">{formatKm(property.distanceCollegeKm)}</span>
                 </div>
               </div>
             </div>

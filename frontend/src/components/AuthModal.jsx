@@ -18,12 +18,36 @@ export default function AuthModal() {
   const [regPhone, setRegPhone] = useState('');
   const [regRole, setRegRole] = useState('ROLE_BUYER');
 
-  useEffect(() => {
-    setTab(authModalInitialTab || 'login');
+  const resetFormFields = () => {
+    setLoginEmail('');
+    setLoginPassword('');
+    setRegFullName('');
+    setRegEmail('');
+    setRegPassword('');
+    setRegPhone('');
+    setRegRole('ROLE_BUYER');
     setError('');
+  };
+
+  // Every time modal opens or requested tab changes, wipe inputs completely
+  useEffect(() => {
+    if (authModalOpen) {
+      setTab(authModalInitialTab || 'login');
+      resetFormFields();
+    }
   }, [authModalInitialTab, authModalOpen]);
 
   if (!authModalOpen) return null;
+
+  const handleClose = () => {
+    resetFormFields();
+    closeAuthModal();
+  };
+
+  const handleSwitchTab = (newTab) => {
+    setTab(newTab);
+    resetFormFields();
+  };
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +55,7 @@ export default function AuthModal() {
     setSubmitting(true);
     try {
       await login(loginEmail, loginPassword);
-      closeAuthModal();
+      handleClose();
     } catch (err) {
       setError(
         err.response?.data?.message || 'Invalid email or password. Please check your credentials.'
@@ -53,7 +77,7 @@ export default function AuthModal() {
         phone: regPhone,
         role: regRole,
       });
-      closeAuthModal();
+      handleClose();
     } catch (err) {
       setError(
         err.response?.data?.message || 'Registration failed. Please verify your details.'
@@ -64,9 +88,9 @@ export default function AuthModal() {
   };
 
   return (
-    <div className="modal-backdrop" onClick={closeAuthModal}>
+    <div className="modal-backdrop" onClick={handleClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close-btn" onClick={closeAuthModal} aria-label="Close modal">
+        <button className="modal-close-btn" onClick={handleClose} aria-label="Close modal">
           ×
         </button>
 
@@ -74,20 +98,14 @@ export default function AuthModal() {
           <button
             type="button"
             className={`modal-tab ${tab === 'login' ? 'active' : ''}`}
-            onClick={() => {
-              setTab('login');
-              setError('');
-            }}
+            onClick={() => handleSwitchTab('login')}
           >
             Sign In
           </button>
           <button
             type="button"
             className={`modal-tab ${tab === 'register' ? 'active' : ''}`}
-            onClick={() => {
-              setTab('register');
-              setError('');
-            }}
+            onClick={() => handleSwitchTab('register')}
           >
             Create Account
           </button>
@@ -96,7 +114,7 @@ export default function AuthModal() {
         {error && <div className="modal-error-banner">{error}</div>}
 
         {tab === 'login' ? (
-          <form onSubmit={handleLoginSubmit} className="modal-form">
+          <form onSubmit={handleLoginSubmit} className="modal-form" autoComplete="off">
             <div className="form-group">
               <label htmlFor="login-email">Email Address</label>
               <input
@@ -126,7 +144,7 @@ export default function AuthModal() {
             </button>
           </form>
         ) : (
-          <form onSubmit={handleRegisterSubmit} className="modal-form">
+          <form onSubmit={handleRegisterSubmit} className="modal-form" autoComplete="off">
             <div className="form-group">
               <label>Account Type</label>
               <div className="role-selector">

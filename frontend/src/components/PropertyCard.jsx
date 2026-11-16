@@ -1,17 +1,17 @@
 import { Link } from 'react-router-dom';
+import { resolveImageUrl, FALLBACK_PROPERTY_IMAGE } from '../services/api';
 
 export default function PropertyCard({ property }) {
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
   // Get primary image or first available image
-  let imageUrl = null;
+  let rawUrl = null;
   if (property.images && property.images.length > 0) {
     const primary = property.images.find((img) => img.isPrimary) || property.images[0];
-    imageUrl = primary.imageUrl;
-    if (imageUrl && imageUrl.startsWith('/uploads/')) {
-      imageUrl = `${apiUrl}${imageUrl}`;
-    }
+    rawUrl = primary.imageUrl || primary.url;
+  } else if (property.imageUrl || property.image) {
+    rawUrl = property.imageUrl || property.image;
   }
+
+  const imageUrl = resolveImageUrl(rawUrl);
 
   // Format currency in Indian numbering (INR ₹)
   const formatINR = (val) => {
@@ -28,24 +28,15 @@ export default function PropertyCard({ property }) {
   return (
     <article className="property-card">
       <div className="property-card-media">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={property.title}
-            className="property-card-img"
-            loading="lazy"
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
-          />
-        ) : null}
-        <div
-          className="property-placeholder-img"
-          style={{ display: imageUrl ? 'none' : 'flex' }}
-        >
-          <span>🏠 HomeLens</span>
-        </div>
+        <img
+          src={imageUrl || FALLBACK_PROPERTY_IMAGE}
+          alt={property.title}
+          className="property-card-img"
+          loading="lazy"
+          onError={(e) => {
+            e.target.src = FALLBACK_PROPERTY_IMAGE;
+          }}
+        />
 
         <div className="card-top-badges">
           <span className={`status-pill ${isAvailable ? 'available' : 'rented'}`}>
@@ -115,16 +106,16 @@ export default function PropertyCard({ property }) {
         </div>
 
         {/* Nearby key distance highlights if present */}
-        {(property.distanceMetroKm || property.distanceHospitalKm || property.distanceBusStopKm) && (
+        {(property.distanceMetroKm != null || property.distanceHospitalKm != null || property.distanceBusStopKm != null) && (
           <div className="card-distances">
-            {property.distanceMetroKm && (
-              <span className="dist-item">🚇 {property.distanceMetroKm} km Metro</span>
+            {property.distanceMetroKm != null && (
+              <span className="dist-item">🚇 {Number(property.distanceMetroKm).toFixed(1)} km Metro</span>
             )}
-            {property.distanceHospitalKm && (
-              <span className="dist-item">🏥 {property.distanceHospitalKm} km Hospital</span>
+            {property.distanceHospitalKm != null && (
+              <span className="dist-item">🏥 {Number(property.distanceHospitalKm).toFixed(1)} km Hospital</span>
             )}
-            {property.distanceBusStopKm && (
-              <span className="dist-item">🚌 {property.distanceBusStopKm} km Bus Stop</span>
+            {property.distanceBusStopKm != null && (
+              <span className="dist-item">🚌 {Number(property.distanceBusStopKm).toFixed(1)} km Bus</span>
             )}
           </div>
         )}

@@ -10,6 +10,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Predicate;
+
 import com.homelens.dto.InquiryRequest;
 import com.homelens.dto.InquiryResponse;
 import com.homelens.dto.PageResponse;
@@ -71,6 +73,21 @@ public class InquiryService {
                 return cb.conjunction();
             }
             return cb.equal(root.get("property").get("agent").get("id"), owner.getId());
+        };
+
+        Page<Inquiry> inquiryPage = inquiryRepository.findAll(spec, pageable);
+        return PageResponse.of(inquiryPage.map(InquiryResponse::fromEntity));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<InquiryResponse> getInquiriesForSeeker(String userEmail, Pageable pageable) {
+        User seeker = userRepository.findByEmail(userEmail.toLowerCase().trim())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
+
+        Specification<Inquiry> spec = (root, query, cb) -> {
+            Predicate byUser = cb.equal(root.get("user").get("id"), seeker.getId());
+            Predicate byEmail = cb.equal(cb.lower(root.get("email")), seeker.getEmail().toLowerCase().trim());
+            return cb.or(byUser, byEmail);
         };
 
         Page<Inquiry> inquiryPage = inquiryRepository.findAll(spec, pageable);

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propertyService } from '../services/propertyService';
 import { inquiryService } from '../services/inquiryService';
+import { resolveImageUrl, FALLBACK_PROPERTY_IMAGE } from '../services/api';
 
 export default function OwnerDashboardPage() {
   const { user, isAuthenticated, isOwner } = useAuth();
@@ -63,36 +64,59 @@ export default function OwnerDashboardPage() {
       return;
     }
 
-    if (activeTab === 'my-properties') {
-      loadMyProperties();
-    } else if (activeTab === 'inquiries') {
-      loadMyInquiries();
+    // Protect Owner Portal: Seekers should not see property registration or owner dashboard
+    if (!isOwner) {
+      navigate('/seeker/inquiries', { replace: true });
+      return;
     }
-  }, [isAuthenticated, activeTab]);
 
-  const loadMyProperties = async () => {
+    // Always fetch both properties and inquiries immediately upon opening dashboard
+    loadAllDashboardData();
+  }, [isAuthenticated, isOwner]);
+
+  // When switching tabs, ensure active tab data is fresh
+  useEffect(() => {
+    if (isAuthenticated && isOwner) {
+      if (activeTab === 'my-properties') {
+        loadMyProperties();
+      } else if (activeTab === 'inquiries') {
+        loadMyInquiries();
+      }
+    }
+  }, [activeTab]);
+
+  const loadAllDashboardData = async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await propertyService.getMyProperties(0, 50);
-      setProperties(data.content || []);
+      const [propsData, inqsData] = await Promise.all([
+        propertyService.getMyProperties(0, 50),
+        inquiryService.getMyInquiries(0, 50),
+      ]);
+      setProperties(propsData.content || []);
+      setInquiries(inqsData.content || []);
     } catch (err) {
-      setError('Failed to load your properties. Please check your network connection.');
+      setError('Failed to refresh dashboard. Please check your network connection.');
     } finally {
       setLoading(false);
     }
   };
 
+  const loadMyProperties = async () => {
+    try {
+      const data = await propertyService.getMyProperties(0, 50);
+      setProperties(data.content || []);
+    } catch (err) {
+      setError('Failed to load your properties. Please check your network connection.');
+    }
+  };
+
   const loadMyInquiries = async () => {
-    setLoading(true);
-    setError('');
     try {
       const data = await inquiryService.getMyInquiries(0, 50);
       setInquiries(data.content || []);
     } catch (err) {
       setError('Failed to load inquiries.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -474,10 +498,17 @@ export default function OwnerDashboardPage() {
                   </div>
                 ) : (
                   managingPhotosProperty.images.map((img) => {
-                    const fullImgUrl = img.imageUrl.startsWith('http') ? img.imageUrl : `${apiUrl}${img.imageUrl}`;
+                    const fullImgUrl = resolveImageUrl(img.imageUrl) || FALLBACK_PROPERTY_IMAGE;
                     return (
                       <div key={img.id} className="photo-manager-card">
-                        <img src={fullImgUrl} alt="Property" className="photo-manager-thumb" />
+                        <img
+                          src={fullImgUrl}
+                          alt="Property"
+                          className="photo-manager-thumb"
+                          onError={(e) => {
+                            e.target.src = FALLBACK_PROPERTY_IMAGE;
+                          }}
+                        />
                         <div className="photo-manager-card-overlay">
                           {img.isPrimary && <span className="photo-badge-primary">★ Primary</span>}
                           <button

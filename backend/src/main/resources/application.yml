@@ -6,6 +6,14 @@ spring:
     username: ${DB_USERNAME:homelens}
     password: ${DB_PASSWORD:homelens}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 120000
+      max-lifetime: 300000
+      keepalive-time: 45000
+      validation-timeout: 5000
   jpa:
     hibernate:
       ddl-auto: update

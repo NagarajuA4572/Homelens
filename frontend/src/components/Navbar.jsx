@@ -27,9 +27,13 @@ export default function Navbar() {
         <div className="nav-actions">
           {isAuthenticated ? (
             <div className="user-nav-group">
-              {isOwner && (
+              {isOwner ? (
                 <Link to="/owner/properties" className="owner-dash-btn">
                   🏢 Owner Dashboard
+                </Link>
+              ) : (
+                <Link to="/seeker/inquiries" className="seeker-req-btn">
+                  📬 My Requests
                 </Link>
               )}
               <div className="user-profile-badge">
